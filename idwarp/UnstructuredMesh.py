@@ -84,7 +84,7 @@ class USMesh(object):
     variety of interface functions.
     """
 
-    def __init__(self, options=None, comm=None, debug=False):
+    def __init__(self, options={}, comm=None, debug=False, raiseError=True):
         """
         Create the USMesh object.
 
@@ -101,6 +101,11 @@ class USMesh(object):
         debug : bool
             Flag specifying if the MExt import is automatically deleted.
             This needs to be true ONLY when a symbolic debugger is used.
+
+        raiseError : bool
+            Flag specifying whether to raise errors on initialization.
+            This is primarily used for auto-generating the options table, and
+            should not be set to False if the intention is to actually use this package.
         """
 
         if comm is None:
@@ -109,29 +114,31 @@ class USMesh(object):
             self.comm = comm
 
         # Check if warp has already been set if this is this has been
-        # interhited to complex version
+        # inherited to complex version
         try:
             self.warp
         except AttributeError:
             curDir = os.path.dirname(os.path.realpath(__file__))
             self.warp = MExt("idwarp", [curDir], debug=debug)._module
-        if options is not None:
+        if not options:  # checks if
             self.solverOptions = options
-        else:
+        elif raiseError:
             raise Error(
-                "The 'options' keyword argument is *NOT* "
-                "optional. An options dictionary must be passed upon "
-                "creation of this object"
+                (
+                    "The 'options' keyword argument is *NOT* optional and cannot be empty. "
+                    + "An options dictionary must be passed upon creation of this object"
+                )
             )
 
         # Initialize PETSc if not done so
-        self.warp.initpetsc(self.comm.py2f())
+        if raiseError:
+            self.warp.initpetsc(self.comm.py2f())
 
         # Set realtype of 'd'. 'D' is used in Complex and set in
         # UnstructuredMesh_C.py
         self.dtype = "d"
 
-        # Defalut options for mesh warping
+        # Default options for mesh warping
         self.solverOptionsDefault = {
             "gridFile": None,
             "fileType": "cgns",
@@ -166,7 +173,7 @@ class USMesh(object):
         self.meshType = self.solverOptions["fileType"]
 
         # Determine how to read:
-        if self.meshType is not None:
+        if self.meshType is not None and raiseError:
             if self.meshType.lower() == "cgns":
                 # Determine type of CGNS mesh we have:
                 self.warp.readcgns(fileName)
@@ -175,7 +182,7 @@ class USMesh(object):
                 self._readOFGrid(fileName)
             elif self.meshType.lower() == "plot3d":
                 self.warp.readplot3d(fileName)
-        else:
+        elif raiseError:
             raise Error("Invalid input file type. valid options are: " "CGNS" or "OpenFOAM.")
 
     def getSurfaceCoordinates(self):
