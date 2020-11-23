@@ -9,6 +9,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../"))
+sys.path.insert(0, os.path.abspath("./"))  # for the local extention ext
 
 # -- Project information -----------------------------------------------------
 project = "IDWarp"
@@ -17,7 +18,7 @@ project = "IDWarp"
 # Built-in Sphinx extensions are already contained in the imported variable
 # here we add external extensions, which must also be added to requirements.txt
 # so that RTD can import and use them
-extensions.extend(["numpydoc"])  # noqa: F405
+extensions.extend(["numpydoc", "ext.optionstable"])  # noqa: F405
 
 # mock import for autodoc
 autodoc_mock_imports = ["numpy", "mpi4py", "petsc4py"]
